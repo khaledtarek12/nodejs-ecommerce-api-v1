@@ -5,6 +5,8 @@ const ApiError = require("./utils/apiError");
 const dbConnection = require("./config/database");
 const categoryRoutes = require("./routes/categoryRoutes");
 const globalErrorHandler = require("./middlewares/errorMiddleware");
+const SubCategoryRoutes = require("./routes/subCategoryRoutes");
+
 dotenv.config({ path: "config.env" });
 
 // database connection
@@ -15,30 +17,29 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
-
 // middleware
 if (process.env.NODE_ENV === "development") {
-    app.use(morgan("dev"));
-    console.log(`mode: ${process.env.NODE_ENV} , morgan enabled...`);
+  app.use(morgan("dev"));
+  console.log(`mode: ${process.env.NODE_ENV} , morgan enabled...`);
 }
-
 
 // mount routes
 app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/sub-categories", SubCategoryRoutes);
 app.all("*", (request, response, next) => {
-    // response.status(404).json({ message: error.message });
-    next(new ApiError(`can't find this route: ${request.originalUrl}`, 400));
+  // response.status(404).json({ message: error.message });
+  next(new ApiError(`can't find this route: ${request.originalUrl}`, 400));
 });
 
 // global error handler middleware in express
 app.use(globalErrorHandler);
 
 const server = app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
 
 app.get("/", (request, response) => {
-    response.send(`
+  response.send(`
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -159,12 +160,11 @@ app.get("/", (request, response) => {
 `);
 });
 
-
 // uncaught error handler - outside express
 process.on("unhandledRejection", (error) => {
-    console.error(`Unhandled Rejection : ${error.name} | ${error.message}`);
-    server.close(() => {
-        console.log("Server shutting down...");
-        process.exit(1)
-    });
-})
+  console.error(`Unhandled Rejection : ${error.name} | ${error.message}`);
+  server.close(() => {
+    console.log("Server shutting down...");
+    process.exit(1);
+  });
+});
