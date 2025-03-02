@@ -8,6 +8,7 @@ const globalErrorHandler = require("./middlewares/errorMiddleware");
 const categoryRoutes = require("./routes/categoryRoutes");
 const SubCategoryRoutes = require("./routes/subCategoryRoutes");
 const brandRoutes = require("./routes/brandRoutes");
+const producRoutes = require("./routes/productRoutes.routes");
 
 dotenv.config({ path: "config.env" });
 
@@ -29,6 +30,7 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/sub-categories", SubCategoryRoutes);
 app.use("/api/v1/brands", brandRoutes);
+app.use("/api/v1/products", producRoutes);
 
 app.all("*", (request, response, next) => {
   // response.status(404).json({ message: error.message });
