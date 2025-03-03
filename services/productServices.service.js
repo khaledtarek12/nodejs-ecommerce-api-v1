@@ -2,6 +2,7 @@ const slugify = require("slugify");
 const Asynchandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const Products = require("../models/productsModels.module");
+const ApiFeatures = require("../utils/apiFeatures");
 
 // @desc create Products
 // @route POST /api/v1/products
@@ -16,41 +17,22 @@ exports.createProducts = Asynchandler(async (req, res) => {
 // @route GET /api/v1/products
 // @access public
 exports.getProducts = Asynchandler(async (req, res) => {
-  //1- filtering
-  const queryStringObj = { ...req.query };
-  const excludeFields = ["pages", "page", "sort", "limit", "fields"];
-  excludeFields.forEach((field) => delete queryStringObj[field]);
-  let queryStr = JSON.stringify(queryStringObj);
-  queryStr = queryStr.replace(
-    /\b(gt|gte|lt|lte|in)\b/g,
-    (match) => `$${match}`
-  );
-
-  //2- pagination
-  const pages = req.query.pages * 1 || 1;
-  const limit = req.query.limit * 1 || 50;
-  const skip = (pages - 1) * limit;
-
-  //3- build query
-  let mongooseQuery = Products.find(JSON.parse(queryStr))
-    .limit(limit)
-    .skip(skip)
-    .populate({
-      path: "category",
-      select: "name",
-    });
-
-  //4- sorting
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(",").join(" ");
-    mongooseQuery = mongooseQuery.sort(sortBy);
-  } else {
-    mongooseQuery = mongooseQuery.sort("-createdAt");
-  }
-
+  const numberOfDocs = await Products.countDocuments();
+  const apiFeatures = new ApiFeatures({
+    mongooseQuery: Products.find(),
+    queryString: req.query,
+  });
+  //1- filtering / 2- pagination / 3- sorting /4- limit fields /5- search
+  apiFeatures
+    .Filter()
+    .Search()
+    .Pagination({ numberOfDocs })
+    .LimitFields()
+    .Sort();
   // Executing query
+  const { mongooseQuery, pagination } = apiFeatures;
   const products = await mongooseQuery;
-  res.status(200).json({ result: products.length, pages, data: products });
+  res.status(200).json({ result: products.length, pagination, data: products });
 });
 
 // @desc get sepcific Products by id
