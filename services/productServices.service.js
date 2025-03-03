@@ -16,35 +16,37 @@ exports.createProducts = Asynchandler(async (req, res) => {
 // @route GET /api/v1/products
 // @access public
 exports.getProducts = Asynchandler(async (req, res) => {
-  //@desc filtering using the query string
-  // 1- take copy all the query string
+  //1- filtering
   const queryStringObj = { ...req.query };
-  // 2- exclude fields
   const excludeFields = ["pages", "page", "sort", "limit", "fields"];
-  //3- delete exclude fields
   excludeFields.forEach((field) => delete queryStringObj[field]);
-
-  // 4- advanced filtering using gt, gte, lt, lte
   let queryStr = JSON.stringify(queryStringObj);
   queryStr = queryStr.replace(
     /\b(gt|gte|lt|lte|in)\b/g,
     (match) => `$${match}`
   );
-  console.log(JSON.parse(queryStr));
 
-  // pagination
+  //2- pagination
   const pages = req.query.pages * 1 || 1;
   const limit = req.query.limit * 1 || 50;
   const skip = (pages - 1) * limit;
 
-  // build query
-  const mongooseQuery = Products.find(JSON.parse(queryStr))
+  //3- build query
+  let mongooseQuery = Products.find(JSON.parse(queryStr))
     .limit(limit)
     .skip(skip)
     .populate({
       path: "category",
       select: "name",
     });
+
+  //4- sorting
+  if (req.query.sort) {
+    const sortBy = req.query.sort.split(",").join(" ");
+    mongooseQuery = mongooseQuery.sort(sortBy);
+  } else {
+    mongooseQuery = mongooseQuery.sort("-createdAt");
+  }
 
   // Executing query
   const products = await mongooseQuery;
